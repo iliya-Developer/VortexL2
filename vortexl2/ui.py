@@ -163,14 +163,14 @@ def prompt_endpoints(config: Config) -> bool:
         console.print("[red]Iran IP is required[/]")
         return False
     
-    # Outside IP
+    # Kharej IP
     default_kharej = config.ip_kharej or ""
     ip_kharej = Prompt.ask(
-        "[bold cyan]Outside Server Public IP[/]",
+        "[bold cyan]Kharej Server Public IP[/]",
         default=default_kharej if default_kharej else None
     )
     if not ip_kharej:
-        console.print("[red]Outside IP is required[/]")
+        console.print("[red]Kharej IP is required[/]")
         return False
     
     config.ip_iran = ip_iran

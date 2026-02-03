@@ -45,7 +45,7 @@ sudo vortexl2
 
 Enter the public IPs for both servers when prompted:
 - Iran Server Public IP
-- Outside Server Public IP
+- Kharej Server Public IP
 
 ### 4. Create Tunnel
 
@@ -67,7 +67,7 @@ sudo vortexl2
 # 2. Configure endpoints (option 2)
 #    - Select role: IRAN
 #    - Enter Iran public IP: YOUR_IRAN_IP
-#    - Enter Outside public IP: YOUR_KHAREJ_IP
+#    - Enter Kharej public IP: YOUR_KHAREJ_IP
 #    - Iran l2tpeth0 IP: 10.30.30.1/30 (default)
 #    - Remote Forward IP: 10.30.30.2 (default)
 # 3. Create tunnel (option 3)
@@ -85,7 +85,7 @@ sudo vortexl2
 # 2. Configure endpoints (option 2)
 #    - Select role: KHAREJ
 #    - Enter Iran public IP: IRAN_SERVER_IP
-#    - Enter Outside public IP: YOUR_KHAREJ_IP
+#    - Enter Kharej public IP: YOUR_KHAREJ_IP
 # 3. Create tunnel (option 3)
 ```
 

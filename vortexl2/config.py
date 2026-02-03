@@ -49,11 +49,6 @@ class Config:
             if key not in self._config:
                 self._config[key] = default
 
-        # Migrate old "OUTSIDE" role to "KHAREJ"
-        if self._config.get("role") == "OUTSIDE":
-            self._config["role"] = "KHAREJ"
-            self._save()
-
     
     def _save(self) -> None:
         """Save configuration to file with secure permissions."""
