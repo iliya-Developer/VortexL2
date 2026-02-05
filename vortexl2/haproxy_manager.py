@@ -350,8 +350,19 @@ defaults
     def _is_port_listening(self, port: int) -> bool:
         """Check if a port is listening."""
         try:
+            # Check using ss with multiple patterns
             result = subprocess.run(
-                f"ss -tlnp | grep :{port}",
+                f"ss -tlnp 2>/dev/null | grep -E ':{port}\\b'",
+                shell=True,
+                capture_output=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                return True
+            
+            # Fallback: check with netstat
+            result = subprocess.run(
+                f"netstat -tlnp 2>/dev/null | grep -E ':{port}\\b'",
                 shell=True,
                 capture_output=True,
                 timeout=5
