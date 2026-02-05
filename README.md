@@ -1,90 +1,87 @@
-# VortexL2
+VortexL2 - Advanced L2TPv3 Tunnel Manager v2.0
 
-**L2TPv3 Ethernet Tunnel Manager for Ubuntu/Debian**
+Professional L2TPv3 Tunnel Management for Iranian & International Servers
 
-A modular, production-quality CLI tool for managing multiple L2TPv3 tunnels and TCP/UDP port forwarding using HAProxy.
+A comprehensive CLI tool for managing multiple L2TPv3 tunnels simultaneously with high-speed port forwarding using HAProxy.
 
-```
- __      __        _            _     ___  
- \ \    / /       | |          | |   |__ \ 
-  \ \  / /__  _ __| |_ _____  _| |      ) |
-   \ \/ / _ \| '__| __/ _ \ \/ / |     / / 
-    \  / (_) | |  | ||  __/>  <| |____/ /_ 
-     \/ \___/|_|   \__\___/_/\_\______|____|
-                                    v2.0.0
-```
+🌟 Key Features
 
-## ✨ Features
+🏗️ Advanced Architecture
 
-- 🔧 Interactive TUI management panel with Rich
-- 🌐 **Multiple L2TPv3 tunnels** on a single server
-- 🚀 **High-performance port forwarding via HAProxy**
-- 🔄 Systemd integration for persistence
-- 📦 One-liner installation
-- 🛡️ Duplicate validation for tunnel IDs, session IDs, and IPs
-- 🛡️ Secure configuration with 0600 permissions
-- 🎯 Fully configurable tunnel IDs
+· Multi-Tunnel System: Unlimited tunnel management on a single server
+· HAProxy Integration: High-performance port forwarding
+· Systemd Services: Automatic startup and service management
 
-## 📦 Quick Install
+🔧 Technical Capabilities
 
-```bash
-bash <(curl -Ls https://raw.githubusercontent.com/iliya-Developer/VortexL2/main/install.sh)
-```
+· Interactive TUI: Rich library-based user interface
+· Advanced Validation: Prevents duplicates and ensures uniqueness
+· Configuration Management: YAML storage with 0600 permissions
+· Comprehensive Logging: Complete logging system for troubleshooting
 
-## 🚀 First Run
+🚀 Performance
 
-### 1. Open the Management Panel
+· One-Line Installation: Quick and easy setup
+· High Availability: Designed for production environments
+· Low Latency: Optimized architecture for minimal delay
+· Scalable: Supports heavy traffic loads
+
+📦 Installation & Setup
+
+Method 1: Direct Installation
 
 ```bash
+# Download and run installation script
+curl -sSL https://raw.githubusercontent.com/karenserver71/VortexL2/main/install.sh | sudo bash
+```
+
+Method 2: Manual Installation
+
+```bash
+# Clone repository
+git clone https://github.com/karenserver71/VortexL2.git
+cd VortexL2
+
+# Install dependencies
+sudo apt-get update
+sudo apt-get install -y python3-pip haproxy iproute2
+pip3 install -r requirements.txt
+
+# Install package
+sudo python3 setup.py install
+
+# Enable services
+sudo systemctl daemon-reload
+sudo systemctl enable vortexl2-tunnel
+sudo systemctl enable vortexl2-forward-daemon
+```
+
+🚀 Execution Commands
+
+Main Management Panel
+
+```bash
+# Run interactive management panel
 sudo vortexl2
+
+# With advanced options
+sudo vortexl2 --tunnel all --log-level debug
 ```
 
-### 2. Create Tunnels
+Tunnel Management
 
-Each tunnel needs:
-- **Side**: IRAN (receives traffic) or KHAREJ (external server)
-- **Tunnel Name**: A unique identifier (e.g., `tunnel1`, `kharej-hetzner`)
-- **Local IP**: This server's public IP
-- **Remote IP**: The other server's public IP
-- **Interface IP**: Tunnel interface IP (e.g., `10.30.30.1/30`)
-- **Tunnel IDs**: Unique IDs for the L2TP connection
+```bash
+# Apply all tunnels (for system boot)
+sudo vortexl2 apply
 
-### 3. Configure Both Sides
+# Check tunnel status
+sudo vortexl2 status
 
-Both servers need matching tunnel configurations with swapped values:
+# Show specific tunnel information
+sudo vortexl2 show tunnel1
+```
 
-| Parameter | IRAN Side | KHAREJ Side |
-|-----------|-----------|-------------|
-| Local IP | 1.2.3.4 | 5.6.7.8 |
-| Remote IP | 5.6.7.8 | 1.2.3.4 |
-| Interface IP | 10.30.30.1/30 | 10.30.30.2/30 |
-| Tunnel ID | 1000 | 2000 |
-| Peer Tunnel ID | 2000 | 1000 |
-| Session ID | 10 | 20 |
-| Peer Session ID | 20 | 10 |
-
-### 4. Add Port Forwards (IRAN side only)
-
-Select "Port Forwards" and add ports like: `443,80,2053`
-
-HAProxy will automatically handle all port forwarding with excellent performance.
-
-## 📋 Commands
-
-| Command | Description |
-|---------|-------------|
-| `sudo vortexl2` | Open management panel |
-| `sudo vortexl2 apply` | Apply all tunnels (for systemd boot) |
-| `sudo vortexl2 --version` | Show version |
-
-## 🔧 Services
-
-VortexL2 uses two systemd services:
-
-| Service | Description |
-|---------|-------------|
-| `vortexl2-tunnel.service` | Creates L2TP tunnels on boot |
-| `vortexl2-forward-daemon.service` | Manages HAProxy port forwarding |
+Service Management
 
 ```bash
 # Check service status
@@ -95,40 +92,41 @@ sudo systemctl status haproxy
 # View logs
 journalctl -u vortexl2-tunnel -f
 journalctl -u vortexl2-forward-daemon -f
+sudo tail -f /var/log/vortexl2/tunnel.log
 ```
 
-## 🚀 HAProxy Port Forwarding (v2.0)
+📊 Tunnel Configuration Example
 
-VortexL2 v2.0 uses **HAProxy** for production-grade port forwarding:
+Iran Side Configuration
 
-### Advantages over previous versions:
-- **10x faster** than Python asyncio forwarding
-- **Lower latency** with C-based implementation
-- **Higher throughput** - handles 10,000+ concurrent connections
-- **Better resource usage** - lower CPU and memory consumption
-- **Production-ready** - used by AWS, Netflix, and major organizations
-
-### Configuration Location:
 ```
-/etc/haproxy/haproxy.cfg    # HAProxy main config (managed by VortexL2)
-/etc/haproxy/haproxy.cfg.bak # Automatic backup of original config
-```
-
-### Check HAProxy Status:
-```bash
-# Check if HAProxy is running
-sudo systemctl status haproxy
-
-# List forwarded ports
-ss -tlnp | grep haproxy
-
-# View HAProxy stats
-echo "show stat" | socat stdio /var/run/haproxy.sock
+Side: IRAN
+Local IP: 185.100.100.100
+Remote IP: 95.179.200.200
+Interface IP: 10.30.30.1/30
+Tunnel ID: 1000
+Peer Tunnel ID: 2000
+Session ID: 10
+Peer Session ID: 20
+Forwarded Ports: 443,80,2053,2083,8443
 ```
 
-## 🔍 Troubleshooting
+Kharej Side Configuration
 
-### Check Tunnel Status
+```
+Side: KHAREJ
+Local IP: 95.179.200.200
+Remote IP: 185.100.100.100
+Interface IP: 10.30.30.2/30
+Tunnel ID: 2000
+Peer Tunnel ID: 1000
+Session ID: 20
+Peer Session ID: 10
+```
+
+🔍 Troubleshooting Commands
+
+Check Tunnel Status
 
 ```bash
 # Show L2TP tunnels
@@ -137,133 +135,46 @@ ip l2tp show tunnel
 # Show L2TP sessions
 ip l2tp show session
 
-# Check interface (l2tpeth0, l2tpeth1, etc.)
-ip addr show l2tpeth0
+# Check interfaces
+ip addr show | grep l2tpeth
 
-# Test connectivity through tunnel
-ping 10.30.30.2  # From IRAN side
+# Test tunnel connectivity
+ping 10.30.30.2 -c 4
 ```
 
-### Check Port Forwards
+Check Port Forwarding
 
 ```bash
 # List listening ports (HAProxy)
 ss -tlnp | grep haproxy
 
-# Check services
+# Check HAProxy status
 sudo systemctl status haproxy
-sudo systemctl status vortexl2-forward-daemon
+
+# Test port forwarding
+curl -I http://localhost:80
 ```
 
-### Common Issues
-
-**❌ Tunnel not working**
-1. Ensure both sides have matching tunnel IDs (swapped peer values)
-2. Check firewall allows IP protocol 115 (L2TPv3)
-3. Verify kernel modules are loaded: `lsmod | grep l2tp`
-
-**❌ Port forward not working**
-1. Verify tunnel is up: `ping 10.30.30.2`
-2. Check HAProxy status: `systemctl status haproxy`
-3. Check forward-daemon service: `systemctl status vortexl2-forward-daemon`
-4. Check HAProxy config: `cat /etc/haproxy/haproxy.cfg`
-
-**❌ Interface l2tpeth0 not found**
-1. Ensure session is created (not just tunnel)
-2. Check kernel modules: `modprobe l2tp_eth`
-3. Recreate tunnel from panel
-
-## 🔧 Configuration
-
-Tunnels are stored in `/etc/vortexl2/tunnels/`:
-
-```yaml
-# /etc/vortexl2/tunnels/tunnel1.yaml
-name: tunnel1
-local_ip: "1.2.3.4"
-remote_ip: "5.6.7.8"
-interface_ip: "10.30.30.1/30"
-remote_forward_ip: "10.30.30.2"
-tunnel_id: 1000
-peer_tunnel_id: 2000
-session_id: 10
-peer_session_id: 20
-interface_index: 0
-forwarded_ports:
-  - 443
-  - 80
-  - 2053
-```
-
-## 🏗️ Architecture
-
-### Port Forwarding (HAProxy)
+⚙️ Configuration Files Structure
 
 ```
-                    ┌─────────────────┐
-                    │   IRAN Server   │
-                    │                 │
-                    │  ┌───────────┐  │
- Users ──────────►  │  │  HAProxy  │  │
- (443,80,2053)      │  │  (fast)   │  │
-                    │  └─────┬─────┘  │
-                    │        │        │
-                    │  ┌─────▼─────┐  │
-                    │  │ l2tpeth0  │  │
-                    │  │10.30.30.1 │  │
-                    │  └─────┬─────┘  │
-                    └────────┼────────┘
-                             │
-                      L2TPv3 Tunnel
-                      (encap ip)
-                             │
-                    ┌────────┼────────┐
-                    │  ┌─────▼─────┐  │
-                    │  │ l2tpeth0  │  │
-                    │  │10.30.30.2 │  │
-                    │  └───────────┘  │
-                    │                 │
-                    │  KHAREJ Server  │
-                    │   5.6.7.8       │
-                    └─────────────────┘
+/etc/vortexl2/
+├── tunnels/                    # Tunnel configurations
+│   ├── tunnel1.yaml
+│   ├── tunnel2.yaml
+│   └── haproxy-ports.conf
+├── vortexl2.conf              # Main configuration
+└── logs/                      # System logs
+
+/var/log/vortexl2/
+├── tunnel.log
+├── forward.log
+└── haproxy.log
 ```
 
-## 📁 Project Structure
+🗑️ Uninstallation
 
-```
-VortexL2/
-├── vortexl2/
-│   ├── __init__.py          # Package info (v2.0.0)
-│   ├── main.py              # CLI entry point
-│   ├── config.py            # Multi-tunnel configuration
-│   ├── tunnel.py            # L2TPv3 tunnel operations
-│   ├── forward.py           # Port forward interface
-│   ├── haproxy_manager.py   # HAProxy configuration manager
-│   ├── forward_daemon.py    # Background forwarding daemon
-│   └── ui.py                # Rich TUI interface
-├── systemd/
-│   ├── vortexl2-tunnel.service         # Tunnel boot service
-│   └── vortexl2-forward-daemon.service # HAProxy forward daemon
-├── install.sh               # Installation script
-├── requirements.txt         # Python dependencies
-└── README.md                # This file
-```
-
-## ⚠️ Security Notice
-
-**L2TPv3 provides NO encryption!**
-
-The tunnel transports raw Ethernet frames over IP without any encryption. This is suitable for:
-- ✅ Bypassing network restrictions
-- ✅ Creating L2 connectivity
-- ❌ NOT secure for sensitive data in transit
-
-For encrypted traffic, consider:
-- Adding IPsec on top of L2TPv3
-- Using WireGuard as an alternative
-- Encrypting application-level traffic (TLS/HTTPS)
-
-## 🔄 Uninstall
+Complete Removal
 
 ```bash
 # Stop services
@@ -271,24 +182,32 @@ sudo systemctl stop vortexl2-tunnel vortexl2-forward-daemon haproxy
 sudo systemctl disable vortexl2-tunnel vortexl2-forward-daemon
 
 # Remove files
-sudo rm -rf /opt/vortexl2
+sudo rm -rf /opt/vortexl2 /etc/vortexl2 /var/lib/vortexl2 /var/log/vortexl2
 sudo rm /usr/local/bin/vortexl2
-sudo rm /etc/systemd/system/vortexl2-*
-sudo rm -rf /etc/vortexl2
-sudo rm -rf /var/lib/vortexl2
-sudo rm -rf /var/log/vortexl2
+sudo rm /etc/systemd/system/vortexl2-*.service
 
-# Restore original HAProxy config if needed
-sudo cp /etc/haproxy/haproxy.cfg.bak /etc/haproxy/haproxy.cfg
+# Restore HAProxy if needed
+if [ -f /etc/haproxy/haproxy.cfg.bak ]; then
+    sudo cp /etc/haproxy/haproxy.cfg.bak /etc/haproxy/haproxy.cfg
+    sudo systemctl restart haproxy
+fi
 
 # Reload systemd
 sudo systemctl daemon-reload
 ```
 
-## 📄 License
+📄 License
 
 MIT License
 
-## 👤 Author
+👤 Author & Support
 
-Telegram: @iliyadevsh
+· Developer: Karen Server
+· Telegram Support: @karenserver_support
+· GitHub Issues: https://github.com/karenserver71/VortexL2/issues
+
+---
+
+⚠️ Security Notice: L2TPv3 provides no encryption by itself. Use IPsec or other VPNs for sensitive traffic.
+
+✅ Note: This project is designed for legal use and network restriction bypassing.
