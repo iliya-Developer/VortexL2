@@ -27,7 +27,7 @@ def get_forward_manager(config=None):
         return HAProxyManager(config)
     elif mode == "socat":
         from .socat_manager import SocatManager
-        return SocatManager()
+        return SocatManager(config)
     return None
 
 
