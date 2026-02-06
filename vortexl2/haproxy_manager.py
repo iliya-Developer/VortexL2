@@ -123,6 +123,14 @@ defaults
     timeout client  50000
     timeout server  50000
 
+# Stats page - always present so HAProxy has at least one frontend
+frontend stats_frontend
+    mode http
+    bind 127.0.0.1:9999
+    stats enable
+    stats uri /stats
+    stats refresh 10s
+
 """
         
         # For each tunnel and port create dedicated frontend+backend
