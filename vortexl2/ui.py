@@ -172,7 +172,8 @@ def show_main_menu() -> str:
         ("3", "Delete Tunnel"),
         ("4", "List Tunnels"),
         ("5", "Port Forwards"),
-        ("6", "View Logs"),
+        ("6", "Manage Secure Encryption (WireGuard)"),
+        ("7", "View Logs"),
         ("0", "Exit"),
     ]
     
@@ -629,3 +630,85 @@ def wait_for_enter():
 def confirm(message: str, default: bool = False) -> bool:
     """Ask for confirmation."""
     return Confirm.ask(message, default=default)
+
+
+def show_wireguard_menu() -> str:
+    """Display WireGuard encryption submenu."""
+    menu_items = [
+        ("1", "Install/Enable Secure Layer"),
+        ("2", "Disable Secure Layer"),
+        ("3", "View Status/Keys"),
+        ("0", "Back to Main Menu"),
+    ]
+
+    table = Table(show_header=False, box=box.SIMPLE, padding=(0, 2))
+    table.add_column("Option", style="bold cyan", width=4)
+    table.add_column("Description", style="white")
+
+    for opt, desc in menu_items:
+        table.add_row(f"[{opt}]", desc)
+
+    console.print(Panel(table, title="[bold white]Secure Encryption (WireGuard)[/]", border_style="magenta"))
+
+    return Prompt.ask("\n[bold cyan]Select option[/]", default="0")
+
+
+def show_wireguard_status(status: dict):
+    """Display WireGuard status in a rich table."""
+    table = Table(title="WireGuard Status", box=box.ROUNDED)
+    table.add_column("Property", style="cyan", width=22)
+    table.add_column("Value", style="white")
+
+    installed = status.get("installed", False)
+    iface_up = status.get("interface_up", False)
+
+    table.add_row("Installed", "[green]Yes[/]" if installed else "[red]No[/]")
+    table.add_row("Interface (wg_vortex)", "[green]UP[/]" if iface_up else "[red]DOWN[/]")
+    table.add_row("WireGuard IP", status.get("wg_ip") or "-")
+    table.add_row("Listen Port", str(status.get("listen_port") or "-"))
+    table.add_row("Public Key", status.get("public_key") or "-")
+    table.add_row("Peer Public Key", status.get("peer_public_key") or "-")
+    table.add_row("Peer Endpoint", status.get("peer_endpoint") or "-")
+    table.add_row("Latest Handshake", status.get("latest_handshake") or "-")
+    table.add_row("Transfer RX", status.get("transfer_rx", "0 B"))
+    table.add_row("Transfer TX", status.get("transfer_tx", "0 B"))
+    table.add_row("BBR Enabled", "[green]Yes[/]" if status.get("bbr_enabled") else "[red]No[/]")
+
+    console.print(table)
+
+    # Show public key prominently for easy sharing
+    pub = status.get("public_key")
+    if pub:
+        console.print(Panel(
+            f"[bold green]{pub}[/]",
+            title="[bold white]Your Public Key (share with peer)[/]",
+            border_style="green",
+            box=box.ROUNDED
+        ))
+
+
+def prompt_peer_public_key() -> Optional[str]:
+    """Prompt user to paste the remote peer's WireGuard public key."""
+    console.print("\n[dim]Paste the WireGuard public key from the OTHER server.[/]")
+    console.print("[dim]You can get it by running option 3 (View Status/Keys) on the peer.[/]")
+    key = Prompt.ask("[bold magenta]Peer Public Key[/]")
+    if key and len(key.strip()) >= 40:
+        return key.strip()
+    console.print("[red]Invalid key. A WireGuard public key is a 44-character base64 string.[/]")
+    return None
+
+
+def prompt_wireguard_side() -> Optional[str]:
+    """Prompt for WireGuard side (IRAN or KHAREJ)."""
+    console.print("\n[bold white]Select this server's role:[/]")
+    console.print("  [bold cyan][1][/] [green]IRAN[/]  (10.8.0.1)")
+    console.print("  [bold cyan][2][/] [magenta]KHAREJ[/] (10.8.0.2)")
+    console.print("  [bold cyan][0][/] Cancel")
+
+    choice = Prompt.ask("\n[bold cyan]Select side[/]", default="0")
+
+    if choice == "1":
+        return "IRAN"
+    elif choice == "2":
+        return "KHAREJ"
+    return None

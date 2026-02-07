@@ -49,6 +49,16 @@ class ForwardDaemon:
         # Get forward mode
         mode = get_forward_mode()
         logger.info(f"Forward mode: {mode}")
+
+        # Log WireGuard status
+        try:
+            from vortexl2.wireguard_manager import WireGuardManager
+            if WireGuardManager.is_interface_up():
+                logger.info("WireGuard encryption layer: ACTIVE (traffic routed through wg_vortex)")
+            else:
+                logger.info("WireGuard encryption layer: INACTIVE (direct L2TP routing)")
+        except Exception:
+            pass
         
         if mode == "none":
             logger.info("Port forwarding is DISABLED. Use 'sudo vortexl2' to enable HAProxy mode.")

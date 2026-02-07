@@ -1,0 +1,18 @@
+[Unit]
+Description=VortexL2 WireGuard Encryption Layer
+After=network-online.target vortexl2-tunnel.service
+Wants=network-online.target
+Requires=vortexl2-tunnel.service
+Documentation=https://github.com/iliya-Developer/VortexL2
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/bin/sleep 3
+ExecStart=/usr/bin/wg-quick up /etc/vortex/wg/wg_vortex.conf
+ExecStop=/usr/bin/wg-quick down /etc/vortex/wg/wg_vortex.conf
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

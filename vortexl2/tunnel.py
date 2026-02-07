@@ -233,8 +233,12 @@ class TunnelManager:
                 else:
                     return False, f"Failed to assign IP: {result.stderr}"
         
-        # Set MTU based on encapsulation type
-        mtu = 850 if self.config.encap_type == "udp" else 1400
+        # Set MTU based on encapsulation type and WireGuard status
+        # When WireGuard is enabled, L2TP MTU must be 1450 to fit WireGuard (MTU 1380) inside
+        if getattr(self.config, 'wireguard_enabled', False):
+            mtu = 1450
+        else:
+            mtu = 850 if self.config.encap_type == "udp" else 1400
         result = run_command(f"ip link set dev {self.interface_name} mtu {mtu}")
         if not result.success:
             return False, f"Failed to set MTU: {result.stderr}"

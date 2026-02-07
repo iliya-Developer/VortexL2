@@ -52,7 +52,7 @@ fi
 echo -e "${YELLOW}[1/6] Installing system dependencies...${NC}"
 apt-get update -qq
 # Install haproxy for high-performance port forwarding (not auto-started)
-apt-get install -y -qq python3 python3-pip python3-venv git iproute2 haproxy
+apt-get install -y -qq python3 python3-pip python3-venv git iproute2 haproxy wireguard-tools
 
 # Install kernel modules package
 KERNEL_VERSION=$(uname -r)
@@ -121,6 +121,7 @@ chmod +x "$BIN_PATH"
 echo -e "${YELLOW}[6/6] Installing systemd services...${NC}"
 cp "$INSTALL_DIR/systemd/vortexl2-tunnel.service" "$SYSTEMD_DIR/"
 cp "$INSTALL_DIR/systemd/vortexl2-forward-daemon.service" "$SYSTEMD_DIR/"
+cp "$INSTALL_DIR/systemd/vortexl2-wireguard.service" "$SYSTEMD_DIR/"
 
 # Create config directories
 mkdir -p "$CONFIG_DIR"
@@ -128,11 +129,13 @@ mkdir -p "$CONFIG_DIR/tunnels"
 mkdir -p /var/lib/vortexl2
 mkdir -p /var/log/vortexl2
 mkdir -p /etc/vortexl2/haproxy
+mkdir -p /etc/vortex/wg
 chmod 700 "$CONFIG_DIR"
 chmod 755 /var/lib/vortexl2
 chmod 755 /var/log/vortexl2
 chown root:root /etc/vortexl2/haproxy || true
 chmod 755 /etc/vortexl2/haproxy || true
+chmod 700 /etc/vortex/wg
 
 # Reload systemd
 systemctl daemon-reload
@@ -198,7 +201,7 @@ echo ""
 echo -e "${CYAN}For Iran side port forwarding:${NC}"
 echo -e "  Use menu option 5 to add ports like: 443,80,2053"
 echo ""
-echo -e "${RED}Security Note:${NC}"
-echo -e "  L2TPv3 has NO encryption. For sensitive traffic,"
-echo -e "  consider adding IPsec or WireGuard on top."
+echo -e "${CYAN}Encryption:${NC}"
+echo -e "  Use menu option 6 to enable WireGuard encryption layer"
+echo -e "  This adds kernel-level encryption inside the L2TP tunnel"
 echo ""

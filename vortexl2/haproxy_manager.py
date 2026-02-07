@@ -135,7 +135,12 @@ frontend stats_frontend
         
         # For each tunnel and port create dedicated frontend+backend
         for tunnel in tunnels:
-            remote_ip = getattr(tunnel, 'remote_forward_ip', None)
+            # When WireGuard encryption is enabled, route traffic through the
+            # WireGuard peer IP (10.8.0.x) instead of the L2TP internal IP.
+            if getattr(tunnel, 'wireguard_enabled', False) and getattr(tunnel, 'wireguard_peer_ip', None):
+                remote_ip = tunnel.wireguard_peer_ip
+            else:
+                remote_ip = getattr(tunnel, 'remote_forward_ip', None)
             tunnel_name = tunnel.name
             if not remote_ip:
                 logger.debug(f"Skipping tunnel {tunnel_name}: no remote_forward_ip")

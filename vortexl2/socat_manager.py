@@ -191,7 +191,11 @@ WantedBy=multi-user.target
         if port in self.config.forwarded_ports:
             return False, f"Port {port} already in forwarded list"
 
-        remote_ip = self.config.remote_forward_ip
+        # When WireGuard encryption is enabled, route through WireGuard peer IP
+        if getattr(self.config, 'wireguard_enabled', False) and getattr(self.config, 'wireguard_peer_ip', None):
+            remote_ip = self.config.wireguard_peer_ip
+        else:
+            remote_ip = self.config.remote_forward_ip
         if not remote_ip:
              return False, "Remote forward IP not configured for this tunnel"
 
@@ -312,7 +316,11 @@ WantedBy=multi-user.target
         errors = []
         
         for tunnel in tunnels:
-            remote_ip = getattr(tunnel, 'remote_forward_ip', None)
+            # When WireGuard encryption is enabled, route through WireGuard peer IP
+            if getattr(tunnel, 'wireguard_enabled', False) and getattr(tunnel, 'wireguard_peer_ip', None):
+                remote_ip = tunnel.wireguard_peer_ip
+            else:
+                remote_ip = getattr(tunnel, 'remote_forward_ip', None)
             if not remote_ip:
                 continue
                 

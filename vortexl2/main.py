@@ -18,6 +18,7 @@ from vortexl2 import __version__
 from vortexl2.config import TunnelConfig, ConfigManager, GlobalConfig
 from vortexl2.tunnel import TunnelManager
 from vortexl2.forward import get_forward_manager, get_forward_mode, set_forward_mode, ForwardManager
+from vortexl2.wireguard_manager import WireGuardManager
 from vortexl2 import ui
 
 
@@ -87,6 +88,17 @@ def cmd_apply():
             errors += 1
             continue
     
+    # Bring up WireGuard on tunnels that have it enabled
+    for config in tunnels:
+        if config.wireguard_enabled and config.wireguard_peer_public_key:
+            wg = WireGuardManager(config)
+            if not wg.is_interface_up():
+                print(f"VortexL2: Bringing up WireGuard for tunnel '{config.name}'")
+                wg_ok, wg_msg = wg.enable(
+                    config, config.wireguard_side, config.wireguard_peer_public_key
+                )
+                print(f"  WireGuard: {wg_msg.splitlines()[-1] if wg_msg else 'unknown'}")
+
     print("VortexL2: Tunnel setup complete. Port forwarding managed by forward-daemon service")
     return 1 if errors > 0 else 0
 
@@ -403,13 +415,148 @@ def handle_forwards_menu(manager: ConfigManager):
             ui.wait_for_enter()
 
 
+def handle_wireguard_menu(manager: ConfigManager):
+    """Handle WireGuard encryption submenu."""
+    while True:
+        ui.show_banner()
+
+        # Show current WireGuard status summary
+        wg = WireGuardManager()
+        status = wg.get_status()
+        if status["interface_up"]:
+            ui.console.print("[bold green]WireGuard: ACTIVE[/]\n")
+        elif status["installed"]:
+            ui.console.print("[bold yellow]WireGuard: INSTALLED but INACTIVE[/]\n")
+        else:
+            ui.console.print("[bold red]WireGuard: NOT INSTALLED[/]\n")
+
+        choice = ui.show_wireguard_menu()
+
+        if choice == "0":
+            break
+        elif choice == "1":
+            # Install/Enable Secure Layer
+            _handle_wireguard_enable(manager)
+        elif choice == "2":
+            # Disable Secure Layer
+            _handle_wireguard_disable(manager)
+        elif choice == "3":
+            # View Status/Keys
+            ui.show_banner()
+            status = WireGuardManager.get_status()
+            ui.show_wireguard_status(status)
+            ui.wait_for_enter()
+        else:
+            ui.show_warning("Invalid option")
+            ui.wait_for_enter()
+
+
+def _handle_wireguard_enable(manager: ConfigManager):
+    """Handle enabling WireGuard encryption layer."""
+    ui.show_banner()
+    ui.console.print("[bold white]Enable Secure Encryption Layer (WireGuard)[/]\n")
+
+    # Step 1: Check/install wireguard-tools
+    wg = WireGuardManager()
+    if not wg.check_wireguard_installed():
+        ui.show_info("WireGuard is not installed. Installing...")
+        ok, msg = wg.install_wireguard()
+        ui.show_output(msg, "WireGuard Installation")
+        if not ok:
+            ui.show_error("WireGuard installation failed.")
+            ui.wait_for_enter()
+            return
+        ui.show_success("WireGuard installed")
+    else:
+        ui.show_success("WireGuard is already installed")
+
+    # Step 2: Generate keys (idempotent)
+    ok, msg = wg.generate_keys()
+    keys = wg.get_keys()
+    if not keys["public_key"]:
+        ui.show_error("Failed to generate WireGuard keys")
+        ui.wait_for_enter()
+        return
+
+    ui.console.print(f"\n[bold white]Your Public Key:[/] [bold green]{keys['public_key']}[/]")
+    ui.console.print("[dim]Share this key with the peer server.[/]\n")
+
+    # Step 3: Select tunnel
+    config = ui.prompt_select_tunnel_for_forwards(manager)
+    if not config:
+        ui.wait_for_enter()
+        return
+
+    # Step 4: Select side
+    side = ui.prompt_wireguard_side()
+    if not side:
+        ui.wait_for_enter()
+        return
+
+    # Step 5: Get peer public key
+    peer_key = ui.prompt_peer_public_key()
+    if not peer_key:
+        ui.wait_for_enter()
+        return
+
+    # Step 6: Enable WireGuard
+    ui.show_info("Enabling WireGuard encryption layer...")
+    ok, msg = wg.enable(config, side, peer_key)
+    ui.show_output(msg, "WireGuard Setup")
+
+    if ok:
+        # Update L2TP MTU to 1450 for WireGuard compatibility
+        ui.show_info(f"Updating L2TP MTU on {config.interface_name} to 1450...")
+        mtu_ok, mtu_msg = WireGuardManager.update_l2tp_mtu(config.interface_name)
+        if mtu_ok:
+            ui.show_success(mtu_msg)
+        else:
+            ui.show_warning(mtu_msg)
+
+        ui.show_success("WireGuard encryption layer is now ACTIVE!")
+        ui.console.print("\n[dim]Port forwards will now route through the encrypted WireGuard tunnel.[/]")
+    else:
+        ui.show_error("Failed to enable WireGuard encryption layer")
+
+    ui.wait_for_enter()
+
+
+def _handle_wireguard_disable(manager: ConfigManager):
+    """Handle disabling WireGuard encryption layer."""
+    ui.show_banner()
+
+    wg = WireGuardManager()
+    if not wg.is_interface_up():
+        ui.show_warning("WireGuard is not currently active")
+        ui.wait_for_enter()
+        return
+
+    if not ui.confirm("Disable WireGuard encryption layer?", default=False):
+        return
+
+    # Find tunnels with WireGuard enabled and update them
+    tunnels = manager.get_all_tunnels()
+    for config in tunnels:
+        if config.wireguard_enabled:
+            wg.disable(config)
+            ui.show_info(f"Disabled WireGuard for tunnel '{config.name}'")
+
+    # If no tunnel had it enabled, still tear down the interface
+    if not any(t.wireguard_enabled for t in tunnels):
+        wg.disable()
+
+    ui.show_success("WireGuard encryption layer disabled")
+    ui.wait_for_enter()
+
+
 def handle_logs(manager: ConfigManager):
     """Handle log viewing."""
     ui.show_banner()
     
     services = [
         "vortexl2-tunnel.service",
-        "vortexl2-forward-daemon.service"
+        "vortexl2-forward-daemon.service",
+        "vortexl2-wireguard.service",
     ]
     
     for service in services:
@@ -457,6 +604,8 @@ def main_menu():
             elif choice == "5":
                 handle_forwards_menu(manager)
             elif choice == "6":
+                handle_wireguard_menu(manager)
+            elif choice == "7":
                 handle_logs(manager)
             else:
                 ui.show_warning("Invalid option")

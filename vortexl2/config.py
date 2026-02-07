@@ -80,6 +80,10 @@ class TunnelConfig:
         "forwarded_ports": [],
         "encap_type": "ip",      # "ip" or "udp"
         "udp_port": 55555,       # Only used when encap_type == "udp"
+        "wireguard_enabled": False,
+        "wireguard_ip": None,
+        "wireguard_peer_public_key": None,
+        "wireguard_side": None,   # "IRAN" or "KHAREJ"
     }
     
     def __init__(self, name: str, config_data: Dict[str, Any] = None, auto_save: bool = True):
@@ -242,6 +246,62 @@ class TunnelConfig:
         self._config["forwarded_ports"] = value
         self._save()
     
+    @property
+    def wireguard_enabled(self) -> bool:
+        """Get whether WireGuard encryption is enabled."""
+        return bool(self._config.get("wireguard_enabled", False))
+
+    @wireguard_enabled.setter
+    def wireguard_enabled(self, value: bool) -> None:
+        """Set WireGuard enabled state."""
+        self._config["wireguard_enabled"] = bool(value)
+        self._save()
+
+    @property
+    def wireguard_ip(self) -> Optional[str]:
+        """Get WireGuard interface IP (e.g. 10.8.0.1/24)."""
+        return self._config.get("wireguard_ip")
+
+    @wireguard_ip.setter
+    def wireguard_ip(self, value: str) -> None:
+        """Set WireGuard interface IP."""
+        self._config["wireguard_ip"] = value
+        self._save()
+
+    @property
+    def wireguard_peer_public_key(self) -> Optional[str]:
+        """Get WireGuard peer public key."""
+        return self._config.get("wireguard_peer_public_key")
+
+    @wireguard_peer_public_key.setter
+    def wireguard_peer_public_key(self, value: str) -> None:
+        """Set WireGuard peer public key."""
+        self._config["wireguard_peer_public_key"] = value
+        self._save()
+
+    @property
+    def wireguard_side(self) -> Optional[str]:
+        """Get WireGuard side (IRAN or KHAREJ)."""
+        return self._config.get("wireguard_side")
+
+    @wireguard_side.setter
+    def wireguard_side(self, value: str) -> None:
+        """Set WireGuard side."""
+        if value not in ("IRAN", "KHAREJ", None):
+            raise ValueError("wireguard_side must be 'IRAN', 'KHAREJ', or None")
+        self._config["wireguard_side"] = value
+        self._save()
+
+    @property
+    def wireguard_peer_ip(self) -> Optional[str]:
+        """Get the WireGuard peer IP (without CIDR) based on side."""
+        if not self.wireguard_enabled or not self.wireguard_side:
+            return None
+        if self.wireguard_side == "IRAN":
+            return "10.8.0.2"
+        else:
+            return "10.8.0.1"
+
     @property
     def encap_type(self) -> str:
         """Get encapsulation type: 'ip' or 'udp'."""
