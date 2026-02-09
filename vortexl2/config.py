@@ -17,9 +17,10 @@ GLOBAL_CONFIG_FILE = CONFIG_DIR / "config.yaml"
 
 
 class GlobalConfig:
-    """Global configuration for VortexL2 (forward mode, etc.)."""
+    """Global configuration for VortexL2 (forward mode, tunnel mode, etc.)."""
     
     VALID_FORWARD_MODES = ["none", "haproxy", "socat"]
+    VALID_TUNNEL_MODES = ["l2tpv3", "easytier"]
     
     def __init__(self):
         self._config: Dict[str, Any] = {}
@@ -55,6 +56,22 @@ class GlobalConfig:
         if value not in self.VALID_FORWARD_MODES:
             raise ValueError(f"Invalid forward mode: {value}. Must be one of {self.VALID_FORWARD_MODES}")
         self._config["forward_mode"] = value
+        self._save()
+    
+    @property
+    def tunnel_mode(self) -> str:
+        """Get tunnel mode: 'l2tpv3' or 'easytier'."""
+        mode = self._config.get("tunnel_mode", "l2tpv3")
+        if mode not in self.VALID_TUNNEL_MODES:
+            return "l2tpv3"
+        return mode
+    
+    @tunnel_mode.setter
+    def tunnel_mode(self, value: str) -> None:
+        """Set tunnel mode."""
+        if value not in self.VALID_TUNNEL_MODES:
+            raise ValueError(f"Invalid tunnel mode: {value}. Must be one of {self.VALID_TUNNEL_MODES}")
+        self._config["tunnel_mode"] = value
         self._save()
     
     def to_dict(self) -> Dict[str, Any]:

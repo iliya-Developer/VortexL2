@@ -1,8 +1,8 @@
 # VortexL2
 
-**L2TPv3 Ethernet Tunnel Manager for Ubuntu/Debian**
+**L2TPv3 & EasyTier Tunnel Manager for Ubuntu/Debian**
 
-A modular, production-quality CLI tool for managing multiple L2TPv3 tunnels with HAProxy-based port forwarding.
+A modular, production-quality CLI tool for managing L2TPv3 or EasyTier mesh tunnels with HAProxy-based port forwarding.
 
 ```
  __      __        _            _     ___  
@@ -11,87 +11,75 @@ A modular, production-quality CLI tool for managing multiple L2TPv3 tunnels with
    \ \/ / _ \| '__| __/ _ \ \/ / |     / / 
     \  / (_) | |  | ||  __/>  <| |____/ /_ 
      \/ \___/|_|   \__\___/_/\_\______|____|
-                                    v2.0.0
+                                    v4.0.0
 ```
 
 ## ✨ Features
 
 - 🔧 Interactive TUI management panel with Rich
-- 🌐 **Multiple L2TPv3 tunnels** on a single server
+- 🌐 **Two tunnel types:** L2TPv3 or EasyTier mesh
 - 🚀 **HAProxy port forwarding**: High performance, manual activation
 - 🔄 Systemd integration for persistence
 - 📦 One-liner installation
-- 🎯 Fully configurable tunnel IDs
 
 ## 📦 Installation
-
-### Install Latest Version
 
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/iliya-Developer/VortexL2/main/install.sh)
 ```
 
+During installation, choose:
+- **L2TPv3** - Traditional L2TP Ethernet tunnel
+- **EasyTier** - Modern mesh VPN tunnel
+
 ### Install Specific Version
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/iliya-Developer/VortexL2/main/install.sh) v1.1.0
+bash <(curl -Ls https://raw.githubusercontent.com/iliya-Developer/VortexL2/main/install.sh) v4.0.0
 ```
 
-> Available versions: [GitHub Releases](https://github.com/iliya-Developer/VortexL2/releases)
-
-## 🚀 First Run
-
-### 1. Open the Management Panel
+## 🚀 Quick Start
 
 ```bash
 sudo vortexl2
 ```
 
-### 2. Create Tunnels
+### L2TPv3 Mode
+1. Create Tunnel → Select IRAN or KHAREJ
+2. Configure IPs and tunnel IDs
+3. Add port forwards (IRAN side only)
 
-Each tunnel needs:
-- **Tunnel Name**: A unique identifier (e.g., `tunnel1`)
-- **Local IP**: This server's public IP
-- **Remote IP**: The other server's public IP
-- **Interface IP**: Tunnel interface IP (e.g., `10.30.30.1/30`)
-- **Tunnel IDs**: Unique IDs for the L2TP connection
+### EasyTier Mode
+1. Create Tunnel → Select IRAN or KHAREJ
+2. Configure mesh IP, peer IP, port, secret
+3. Add port forwards
 
-### 3. Configure Both Sides
+## 📋 Configuration Examples
 
-| Parameter | IRAN Side | KHAREJ Side |
-|-----------|-----------|-------------|
+### L2TPv3 Setup
+
+| Parameter | IRAN | KHAREJ |
+|-----------|------|--------|
 | Local IP | 1.2.3.4 | 5.6.7.8 |
 | Remote IP | 5.6.7.8 | 1.2.3.4 |
 | Interface IP | 10.30.30.1/30 | 10.30.30.2/30 |
 | Tunnel ID | 1000 | 2000 |
-| Peer Tunnel ID | 2000 | 1000 |
 
-### 4. Enable Port Forwarding (IRAN side only)
+### EasyTier Setup
 
-1. Select "Port Forwards" in the menu
-2. **Enable HAProxy** (option 6 → select haproxy)
-3. Add ports like: `443,80,2053` or range `443-450`
-
-> ⚠️ **Port forwarding is DISABLED by default.** You must enable HAProxy mode manually.
-
-## 📋 Commands
-
-| Command | Description |
-|---------|-------------|
-| `sudo vortexl2` | Open management panel |
-| `sudo vortexl2 apply` | Apply all tunnels |
-| `sudo vortexl2 --version` | Show version |
+| Parameter | IRAN | KHAREJ |
+|-----------|------|--------|
+| Tunnel IP | 10.155.155.1 | 10.155.155.2 |
+| Peer IP | (Kharej public) | (Iran public) |
+| Port | 2070 | 2070 |
+| Secret | vortexl2 | vortexl2 |
 
 ## 🔧 Services
 
-| Service | Description |
-|---------|-------------|
-| `vortexl2-tunnel.service` | Creates L2TP tunnels on boot |
-| `vortexl2-forward-daemon.service` | Manages HAProxy port forwarding |
-
 ```bash
 # Check status
-sudo systemctl status vortexl2-tunnel
+sudo systemctl status vortexl2-tunnel          # L2TPv3
+sudo systemctl status vortexl2-easytier-*      # EasyTier
 sudo systemctl status vortexl2-forward-daemon
 
 # View logs
@@ -100,66 +88,26 @@ journalctl -u vortexl2-forward-daemon -f
 
 ## 🔍 Troubleshooting
 
-### Tunnel not working
-1. Ensure matching tunnel IDs (swapped peer values)
-2. Check firewall allows IP protocol 115
-3. Verify modules: `lsmod | grep l2tp`
+### L2TPv3 Issues
+- Verify matching tunnel IDs (swapped on each side)
+- Check firewall allows IP protocol 115
+- Verify modules: `lsmod | grep l2tp`
 
-### Port forward not working
-1. Check HAProxy mode is enabled (not `none`)
-2. Verify tunnel: `ping 10.30.30.2`
-3. Check daemon: `systemctl status vortexl2-forward-daemon`
-
-## 🔧 Configuration
-
-```yaml
-# /etc/vortexl2/config.yaml (global)
-forward_mode: haproxy  # or: none, socat
-
-# /etc/vortexl2/tunnels/tunnel1.yaml
-name: tunnel1
-local_ip: "1.2.3.4"
-remote_ip: "5.6.7.8"
-interface_ip: "10.30.30.1/30"
-remote_forward_ip: "10.30.30.2"
-forwarded_ports:
-  - 443
-  - 80
-```
-
-## 🏗️ Architecture
-
-```
-                    ┌─────────────────┐
-                    │   IRAN Server   │
-                    │                 │
- Users ──────────►  │     HAProxy     │
- (443,80,2053)      │                 │
-                    │  ┌───────────┐  │
-                    │  │ l2tpeth0  │  │
-                    │  │10.30.30.1 │  │
-                    └────────┼────────┘
-                             │
-                      L2TPv3 Tunnel
-                             │
-                    ┌────────┼────────┐
-                    │  ┌─────▼─────┐  │
-                    │  │ l2tpeth0  │  │
-                    │  │10.30.30.2 │  │
-                    │  └───────────┘  │
-                    │  KHAREJ Server  │
-                    └─────────────────┘
-```
-
-## ⚠️ Security Notice
-
-**L2TPv3 provides NO encryption!** Consider adding IPsec or use encrypted application protocols (TLS).
+### EasyTier Issues
+- Verify same secret on both nodes
+- Check firewall allows the port (default 2070)
+- Check tunnel IP can ping peer
 
 ## 🔄 Uninstall
 
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/iliya-Developer/VortexL2/main/uninstall.sh)
 ```
+
+## ⚠️ Security
+
+- **L2TPv3**: NO encryption. Use IPsec or encrypted apps.
+- **EasyTier**: Built-in encryption.
 
 ## 📄 License
 
